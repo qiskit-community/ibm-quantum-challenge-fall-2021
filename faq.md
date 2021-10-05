@@ -65,4 +65,4 @@ You can watch the replay [here](https://www.youtube.com/playlist?list=PLOFEBzvs-
 
 #### Still have more questions?
 
-Please let us know if you have any additional questions in the [#challenge-fall-2021](https://qiskit.slack.com/archives/_need_update_) in the [Qiskit Slack](https://ibm.co/joinqiskitslack) workspace. 
+Please let us know if you have any additional questions in the [#challenge-fall-2021](https://ibm.co/IQC21F_Slack) in the [Qiskit Slack](https://ibm.co/joinqiskitslack) workspace. 
