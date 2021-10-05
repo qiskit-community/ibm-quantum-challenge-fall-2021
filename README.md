@@ -1,6 +1,6 @@
 # ibm-quantum-challenge-fall-2021
 
-[![License](https://img.shields.io/github/license/qiskit-community/ibm-quantum-challenge-2021.svg)](https://opensource.org/licenses/Apache-2.0)<!--- long-description-skip-begin -->![Last updated](https://img.shields.io/github/last-commit/qiskit-community/ibm-quantum-challenge-fall-2021/main?label=Last%20updated&style=flat)
+[![License](https://img.shields.io/github/license/qiskit-community/ibm-quantum-challenge-fall-2021.svg)](https://opensource.org/licenses/Apache-2.0)<!--- long-description-skip-begin -->![Last updated](https://img.shields.io/github/last-commit/qiskit-community/ibm-quantum-challenge-fall-2021/main?label=Last%20updated&style=flat)
 
 ## Introduction
 
