@@ -14,7 +14,7 @@ Read more about the challenge in the [announcement blog](https://www.research.ib
 
 
 
-Make sure to join the dedicated Slack channel [#challenge-fall-2021]() where you can connect with mentors and fellow attendees! Join the Qiskit Slack workspace [here](https://ibm.co/joinqiskitslack) if you haven't already. Please also review our [Slack Guidelines](https://github.com/qiskit-community/ibm-quantum-challenge-fall-2021/blob/main/slack-details-and-guidelines.md) to make the most of your experience!
+Make sure to join the dedicated Slack channel [#challenge-fall-2021](https://ibm.co/IQC21F_Slack) where you can connect with mentors and fellow attendees! Join the Qiskit Slack workspace [here](https://ibm.co/joinqiskitslack) if you haven't already. Please also review our [Slack Guidelines](https://github.com/qiskit-community/ibm-quantum-challenge-fall-2021/blob/main/slack-details-and-guidelines.md) to make the most of your experience!
 
 <br>
 
