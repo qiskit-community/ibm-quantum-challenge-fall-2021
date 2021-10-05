@@ -15,7 +15,7 @@ Qiskit, and thus the challenge, is implemented in Python. If you’re not famili
 
 ## IBM Quantum Account
 
-Make sure you have registered on the [IBM Quantum platform](https://challenges.quantum-computing.ibm.com/fall-2021) as it hosts the challenge notebooks and exercises. You can register an account [here](https://auth.quantum-computing.ibm.com/auth/idaas?redirectTo=https%3A%2F%2Fquantum-computing.ibm.com%2F). You will be using the IBM Quantum Lab, which hosts Jupyter Notebooks for you. If you are not familiar with Jupyter or the IBM Quantum Lab, you can read the [Quantum Lab Guide](https://quantum-computing.ibm.com/lab/docs/iql/#qlab) for more information on how it is structured and what features are available.
+Make sure you have registered on the [IBM Quantum platform](ibm.co/challenge-fall-21) as it hosts the challenge notebooks and exercises. You can register an account [here](https://auth.quantum-computing.ibm.com/auth/idaas?redirectTo=https%3A%2F%2Fquantum-computing.ibm.com%2F). You will be using the IBM Quantum Lab, which hosts Jupyter Notebooks for you. If you are not familiar with Jupyter or the IBM Quantum Lab, you can read the [Quantum Lab Guide](https://quantum-computing.ibm.com/lab/docs/iql/#qlab) for more information on how it is structured and what features are available.
 
 
 ## Qiskit YouTube livestream for four Qiskit application modules
