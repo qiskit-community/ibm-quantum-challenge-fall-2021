@@ -9,7 +9,7 @@
 Starting October 27 at 09:00 AM (EDT), join us on a 10-day challenge that will grow your quantum computing knowledge and skills as you use Qiskit to tackle real-life problems with quantum algorithms.
 
 
-Read more about the challenge in the [announcement blog](ibm.co/challenge-fall-21-blog).
+Read more about the challenge in the [announcement blog](http://ibm.co/challenge-fall-21-blog).
 
 
 
