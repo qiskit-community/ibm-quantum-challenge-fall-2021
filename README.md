@@ -30,4 +30,4 @@ You can watch YouTube livestreams / recordings for the  four Qiskit application 
 
 # [Preliminary Content](https://github.com/qiskit-community/ibm-quantum-challenge-fall-2021/blob/main/preliminary_content.md)
 
-# [FAQ](https://github.com/qiskit-community/ibm-quantum-challenge-fall-2021/blob/main/faq.md)
+# [FAQ](https://github.com/qiskit-community/ibm-quantum-challenge-fall-2021/wiki)
