@@ -1,7 +1,7 @@
 """
 Challenge 4c solver function for the IBM Quantum Fall Challenge 2021
 Author: Kamen Petroff (kpe)
-Score: 240260 (sometimes 240259 or 240258)
+Score: old:260_084 new:3_482_625
 
 The first accepted solution was implemented using the qiskit builtin QFT.
 While unit testing the const_adder() I've also implemented a QFT from scratch,
@@ -9,32 +9,55 @@ following the figures/diagrams in arXiv:quant-ph/0008033.pdf, and it looked like
 my custom QFT version performed slightly better than the built in one.
 
 Only then I noticed, that the qubit requirements of the original problem
-could be reduced for the equivalent problem (0, C2-C1, C_max-sum(C1)).
+could be reduced by solving the equivalent problem (0, C2-C1, C_max-sum(C1)).
 
 Once it worked I started looking for ways of optimizing the score, and noticed
 that I could wrap all subroutine_add_const() calls in the QRAM part in
-a single QFT/IQFT block. Later I also included the addition of the w constant
+a single QFT/IQFT block. Later I also included the addition of the w offset
 in the same block, so in total I had only one QFT/IQFT.
 
-All the time I was using the most significant `carry` bit in the sum 2**c - (C_max+1)
-with c=data_qubits as a flag qubit.
-Only on the last day I noticed, that by using the original approach in the paper with
-the flag qubit, I should be able to use 5 bits for the data register instead of 6, and
-tried to use an explicit flag qubit as in the paper,
-implemented as not-cnot for setting the flag qubit (but I it took me a lot of try and errors,
-because I have overlook that the constraint_test() inversion in reinitialization()
-was commented out as it was not needed for the flag-less variation I was using before).
+Observing that for all 24 instances max_c <= 23 and C_max <= 11, we 
+conclude that all cost summations and constrain calculations can be
+completed within a 5 qubit register - using the MSB as a infeasibility flag,
+by shifting the cost sum range from (0, max_c) by `2**4 - C_max`
+to (2**4-C_max, 2**4-C_max+max_c) which
+for the given 24 instances with max(max_c)=23 and max(C_max)=11 results
+in the maximal interval [5,28] thus fitting in the 5 qubits.
+
+A further optimization is to observe that the first QFT acts on
+the data qubits initialized to H|0> by applying a H-Gate on each
+qubit followed by conditional rotations. The second application of
+the H-Gate sets the data qubit back to the |0>, so that the following
+conditional rotations have no effect. Therefore the initial QFT can be
+replaced by a H-Gate on all data qubits.
 
 Summary of the approach:
-1. Solving the smaller problem with C1=0, i.e. (0, C2-C1, C_max-sum(C1)).
+1. Solving the smaller equivalent problem with C1=0, i.e. (0, C2-C1, C_max-sum(C1)).
 2. Using a single QFT/IQFT transform and performing all additions in QFT space.
-3. Using approximate QFT with approximation_degree 2 (or 3 for the original problem).
-4. Placing the addition of the w constant before the QRAM constant additions.
-5. Using transpile(['cx','u3'], optimization_level=3)
-6. Using the most significant `carry` bit in the data register (2**c - C_max -1 + cost) as a flag bit and c=data_bits-1.
-7. Using the overflow in the most significant bit to set the flag bit (as in the paper) with c=data_bits (after reducing data_bits to data_bits-1).
+3. Reducing/replacing the initial QFT with H.
+4. Using the most significant `carry` bit in the data register (2**c - C_max -1 + cost) directly as a flag qubit and c=data_bits-1.
+5. Using approximate QFT with approximation_degree 1 or 2.
+6. Using transpile(['cx','u3'], optimization_level=3)
 
 Please find additional comments in the code.
+**N.B.**
+
+1. even the present solution uses one qubit less than the suggested `data_qubits` value (6 for the reduced problem),
+   it accurately sets the constraint flag (the MSB data_qubit) to 1 for infeasible solutions with cost > C_max.
+
+2. the correctness of the solution can be verified by using better suited values
+   for the parameters p and alpha (like p=7,9 and alpha=2):
+
+- p=9,alpha=2):
+  - top20 max ratio - is 100% for all problem instances except 2 for which it is 97% and 98%
+  - the best solution (max ratio) has maximal count rank 0 in 14 cases, in 7 cases is between 1 and 5,
+    and has in only 2 cases rank between 6 and 10 (rank being the position when sorting by counts)
+  - the counts of the best solution is on average around 43 (when using 512 shots)
+
+   ratio: 100 100 98 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 97
+  counts: 56 45 13 21 51 30 29 42 126 17 105 29 18 30 57 65 69 13 39 16 50 23 73 24
+   ranks: 0 0 10 0 0 1 1 1 0 0 0 0 7 2 0 0 0 4 0 1 0 3 0 5
+   
 """
 
 from typing import Union
@@ -48,12 +71,22 @@ from qiskit.circuit import Gate
 
 # True for using the explicit flag qubit, False for using the MSB in data register
 # when USE_FLAG_QUBIT==True - we need only (data_qubits-1) qubits
-USE_FLAG_QUBIT = True  
-QFT_AD          = 2  # QFT approximation degree (number of terms to omit)
-OPT_LEVEL       = 3  # transpiler optimization level (0-3) or -1 to disable
+USE_SCORING    = "new"  # new, old
 
-if USE_FLAG_QUBIT:
-    QFT_AD = min(QFT_AD, 1)  # AD=2 is too much for 5 qubits
+USE_5_QUBITS   = True   # True to use 1 qubit less than the template suggestion
+QFT_AD         = 1      # QFT approximation degree (number of terms to omit)
+OPT_LEVEL      = 3      # transpiler optimization level (0-3) or -1 to disable
+
+if USE_SCORING == 'new':
+    QFT_AD       = 2
+    USE_5_QUBITS = True
+elif USE_SCORING == 'old':
+    QFT_AD       = 1
+    USE_5_QUBITS = False
+else:
+    raise "Unexpected value for USE_SCORING (expecting one of {new, old})"
+
+
 
 
 def transpile(qc: QuantumCircuit) -> QuantumCircuit:
@@ -77,16 +110,12 @@ def solver_function(L1: list, L2: list, C1: list, C2: list, C_max: int) -> Quant
 
     # print name and score
     author = 'Kamen Petroff (kpe)'
-    score = 240259
+    score = 'old:260_084 new:3_482_625'
     print(f'{author}: {score}')
 
     # first let's convert it to the equivalent problem with cost (0, C2-C1)
     C1, C2 = np.array(C1), np.array(C2)
     C1, C2, C_max = C1 - C1, C2 - C1, C_max - C1.sum()
-
-    print(f" APPROX_DEGREE: {QFT_AD}")
-    print(f"     OPT_LEVEL: {OPT_LEVEL}")
-    print(f"USE_FLAG_QUBIT: {USE_FLAG_QUBIT}")
 
     # the number of qubits representing answers
     index_qubits = len(L1)
@@ -96,7 +125,8 @@ def solver_function(L1: list, L2: list, C1: list, C2: list, C_max: int) -> Quant
 
     # the number of qubits representing data values can be defined using the maximum possible total cost as follows:
     data_qubits = math.ceil(math.log(max_c, 2)) + 1 if not max_c & (max_c - 1) == 0 else math.ceil(math.log(max_c, 2)) + 2
-    if USE_FLAG_QUBIT:  # when using a flag qubit we need one qubit less
+
+    if USE_5_QUBITS:
         data_qubits -= 1
 
     ### Phase Operator ###
@@ -202,34 +232,22 @@ def solver_function(L1: list, L2: list, C1: list, C2: list, C_max: int) -> Quant
         qr_data = QuantumRegister(data_qubits, "data")
         qc = QuantumCircuit(qr_index, qr_data)
 
-        ## need to flag cost >= C_max - but its better to flag only if cost >= C_max+1 (i.e. non-zero penalty only)
         ## lets mark only cost > C_max
-        # there are two approaches with:
-        #   a) using the carry bit when the 2**(data_bits-1) -1 - C_max "overflows"
-        #   b) using the bit just before the carry bit, i.e. thus reducing the number of required qubits by one
-        # we can add the 2**c - (C_max+1) factor already here
 
-        if USE_FLAG_QUBIT:
-            c = data_qubits  # b) use an explicit flag qubit
-        else:
-            c = data_qubits - 1  # a) use the MSB in data directly as a flag qubit
+        c = data_qubits - 1      # use the MSB in data directly as a flag qubit
         w = 2 ** c - (C_max + 1)
 
         ###########
         ## QFT start - do all additions in QFT space
-        qc.append(qft(data_qubits), qr_data[:])
-
-        # we can add the w=2**c - (C_max+1) constant already here
-        qc.append(subroutine_add_const(data_qubits, w), qr_data[:])
+        # qc.append(qft(data_qubits), qr_data[:])
+        qc.h(qr_data[:])  # initially all data qubits are |0> so qft is just Hadamard
 
         # QRAM
         for i, (val1, val2) in enumerate(zip(list1, list2)):
             assert val1 == 0
             qc.append(subroutine_add_const(data_qubits, val2).control(1), [qr_index[i]] + qr_data[:])
 
-        ## according to the paper we need to flag cost >= C_max - but its better to flag only if cost >= C_max+1 (i.e. non-zero penalty only)
-        ## lets mark only cost > C_max
-        # qc.append(subroutine_add_const(data_qubits, w), qr_data[:])  # order of addition swapped - see above
+    	qc.append(subroutine_add_const(data_qubits, w), qr_data[:])  # offset by w = 2**c -(C_max+1) to flag infeasible costs in MSB
 
         qc.append(qft(data_qubits).inverse(), qr_data[:])
         ## QFT end
@@ -246,16 +264,8 @@ def solver_function(L1: list, L2: list, C1: list, C2: list, C_max: int) -> Quant
         qr_f = QuantumRegister(1, "flag")
         qc = QuantumCircuit(qr_data, qr_f)
 
-        #
-        # we'll select the data register large enough, so that the cost fits
-        # within (data_qubits-1) qubits, and we can use the last most significant
-        # qubit as a trigger to set the flag qubit. (at this point I realized - we don't
-        # need an extra flag qubit - we can just use the carry on the qr_data[-1] as a flag qubit).
-        #
-        if USE_FLAG_QUBIT:
-            qc.x(qr_data[-1])
-            qc.cx(qr_data[-1], qr_f)
-            qc.x(qr_data[-1])
+
+        # qc.cx(qr_data[-1], qr_f) # we'll be using the MSB directly without the explicit qr_f qubit
 
         return qc.to_gate(label=" Constraint Testing ") if to_gate else qc
 
@@ -265,16 +275,12 @@ def solver_function(L1: list, L2: list, C1: list, C2: list, C_max: int) -> Quant
         qr_f = QuantumRegister(1, "flag")
         qc = QuantumCircuit(qr_data, qr_f)
 
-        if USE_FLAG_QUBIT:
-            c = data_qubits
-        else:
-            c = data_qubits - 1
+        c = data_qubits - 1
 
         #
         # we use the qr_data[-1] as a flag directly
         #
-        if not USE_FLAG_QUBIT:
-            qr_f = qr_data[-1]
+        qr_f = qr_data[-1]
 
         for k in range(c):
             qc.cp(alpha * gamma * (2**k), qr_f, qr_data[k])
