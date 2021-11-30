@@ -1,6 +1,6 @@
 """
 Challenge 4c solver function for the IBM Quantum Fall Challenge 2021
-Author: Rafał Pracht, rpracht@wp.pl
+Author: Rafał Pracht
 Score: 743,349
 
 Summary of the approach:
